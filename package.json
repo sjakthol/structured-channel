@@ -7,7 +7,7 @@
     "build": "webpack",
     "dist": "webpack && webpack --config webpack.min.config.js",
     "test": "karma start --single-run=true karma.conf.js",
-    "watch-build": "webpack -w",
+    "watch-build": "webpack -wd",
     "watch-test": "karma start karma.conf.js"
   },
   "keywords": [
