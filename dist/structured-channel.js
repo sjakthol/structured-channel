@@ -99,7 +99,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      args[_key2] = arguments[_key2];
 	    }
 
-	    console.warn.apply(console, ["WARNING:"].concat(args));
+	    console.log("WARNING:", [].concat(args).map(JSON.stringify).join(" "));
 	  },
 
 	  /**
@@ -167,12 +167,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  _handleMessage: function _handleMessage(event) {
 	    var _this2 = this;
 
-	    if (this.origin !== ANY_ORIGIN && this.origin !== event.origin) {
-	      this._warn("Got a message from unexpected origin", event.origin);
-	      return;
-	    }
-
-	    var data = event.data.data;
+	    var data = event.data;
 
 	    this._debug("Got a message with data:", data);
 
@@ -180,7 +175,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var type = data.type;
 	    var payload = data.payload;
 
-	    if (!id || !type || typeof type !== "string" || !type.trim()) {
+	    if (id === undefined || !type || typeof type !== "string" || !type.trim()) {
 	      this._warn("Got an invalid message:", data);
 	      return;
 	    }
@@ -251,7 +246,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * used to communicate with the given target.
 	 */
 	StructuredChannel.connectTo = function (target, targetOrigin, global) {
-	  if (typeof targetOrigin.MessageChannel === "function") {
+	  if (targetOrigin instanceof Object && targetOrigin.MessageChannel instanceof Function) {
 	    // Second param is the global object, origin is undefined.
 	    global = targetOrigin;
 	    targetOrigin = undefined;
@@ -259,11 +254,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // Create the channel.
 	  var channel = global ? new global.MessageChannel() : new MessageChannel();
+	  var origin = targetOrigin ? targetOrigin : ANY_ORIGIN;
 
 	  // Initiate the connection.
-	  if (target instanceof Window) {
-	    var _origin = targetOrigin ? targetOrigin : ANY_ORIGIN;
-	    target.postMessage(HELLO_TYPE, _origin, [channel.port2]);
+	  if (target instanceof target.Window) {
+
+	    target.postMessage(HELLO_TYPE, origin, [channel.port2]);
 	  } else {
 	    target.postMessage(HELLO_TYPE, [channel.port2]);
 	  }
@@ -288,7 +284,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var handler = function handler(ev) {
 	      if (ev.data === HELLO_TYPE) {
 	        target.onmessage = null;
-	        resolve(new StructuredChannel(ev.ports[0]));
+	        var channel = new StructuredChannel(ev.ports[0]);
+	        channel.send("ready");
+	        resolve(channel);
 	      }
 	    };
 
