@@ -1,3 +1,4 @@
+var StructuredChannel =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -42,14 +43,6 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-
-	module.exports = __webpack_require__(1);
-
-/***/ },
-/* 1 */
 /***/ function(module, exports) {
 
 	"use strict";
