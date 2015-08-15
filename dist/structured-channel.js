@@ -244,10 +244,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	 *
 	 * @return {StructuredChannel} A new `StructuredChannel` instance that can be
 	 * used to communicate with the given target.
+	 *
+	 * @throws {TypeError|Error} The method throws following errors:
+	 *  * TypeError if @param target is undefined.
+	 *  * Error if @param targetOrigin does not match the origin of the target.
+	 *
 	 */
 	StructuredChannel.connectTo = function (target, targetOrigin, global) {
-	  if (targetOrigin instanceof Object && targetOrigin.MessageChannel instanceof Function) {
-	    // Second param is the global object, origin is undefined.
+	  if (!target) {
+	    throw new TypeError("Target must be defined.");
+	  }
+
+	  if (targetOrigin && typeof targetOrigin.MessageChannel === "function") {
+	    // Second param is the global object, targetOrigin is undefined.
 	    global = targetOrigin;
 	    targetOrigin = undefined;
 	  }
@@ -257,10 +266,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var origin = targetOrigin ? targetOrigin : ANY_ORIGIN;
 
 	  // Initiate the connection.
-	  if (target instanceof target.Window) {
+	  if ("document" in target) {
+	    // target looks like a Window. Check the origin and report a failure to the
+	    // user. postMessage just silently discards the message it if the origins
+	    // don't match.
+	    if (targetOrigin && targetOrigin !== ANY_ORIGIN && targetOrigin === target.document.location.origin) {
+	      throw new Error("The given origin does not match the target origin.");
+	    }
 
 	    target.postMessage(HELLO_TYPE, origin, [channel.port2]);
 	  } else {
+	    // This is a worker.
 	    target.postMessage(HELLO_TYPE, [channel.port2]);
 	  }
 
