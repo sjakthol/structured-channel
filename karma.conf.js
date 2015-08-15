@@ -4,7 +4,7 @@ module.exports = function (config) {
     browsers: ['Chrome', 'Firefox'],
     frameworks: ['mocha', 'chai'],
     files: [
-      'dist/structured-channel.min.js',
+      'dist/structured-channel.js',
       'tests/helper_*',
       'tests/test_*.js'
     ],
