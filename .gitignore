@@ -1,2 +1,6 @@
+# Development modules.
 node_modules
+
+# Sourcemaps.
+dist/*.map
 
