@@ -4,8 +4,10 @@
   "description": "A wrapper around MessageChannel API for bi-directional communication between two browsing contexts.",
   "main": "index.js",
   "scripts": {
-    "bundle": "webpack && webpack --config webpack.min.config.js",
+    "build": "webpack",
+    "dist": "webpack && webpack --config webpack.min.config.js",
     "test": "karma start --single-run=true karma.conf.js",
+    "watch-build": "webpack -w",
     "watch-test": "karma start karma.conf.js"
   },
   "keywords": [

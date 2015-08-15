@@ -3,8 +3,8 @@ module.exports = {
   output: {
     path: __dirname + "/dist",
     filename: "structured-channel.js",
-    libraryTarget: "var",
-    library: "StructuredChannel"
+    library: "StructuredChannel",
+    libraryTarget: "umd"
   },
   module: {
     loaders: [
