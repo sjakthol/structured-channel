@@ -1,0 +1,18 @@
+{
+  "name": "structured-channel",
+  "version": "0.0.0",
+  "description": "A wrapper around MessageChannel API for bi-directional communication between two browsing contexts.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "MessageChannel",
+    "worker",
+    "iframe",
+    "communication",
+    "channel"
+  ],
+  "author": "Sami Jaktholm <sjakthol@outlook.com>",
+  "license": "MIT"
+}
