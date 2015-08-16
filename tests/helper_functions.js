@@ -74,11 +74,12 @@ function initializeChannelToWorker(url, targetOrigin, global) {
  *
  * @return {Promise} A Promise that is fulfilled once the given promise settles.
  */
-function expectRejection(promise) {
+function expectRejection(promise, rgx) {
   return promise.then(function() {
     expect(true, "Unexpected success!").to.be.false;
-  }, function() {
+  }, function(err) {
     expect(true, "Rejected, as expected!").to.be.true;
+    expect(err).to.match(rgx);
   })
 }
 
