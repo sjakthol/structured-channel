@@ -78,7 +78,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  /**
 	   * Prints a message to the console if this._doDebug is true.
 	   * @private
-	   *
 	   */
 	  _debug: function _debug() {
 	    if (this._doDebug) {
@@ -165,15 +164,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @private
 	   */
 	  _handleMessage: function _handleMessage(event) {
-	    var _this2 = this;
-
 	    var data = event.data;
 
 	    this._debug("Got a message with data:", data);
 
 	    var id = data.id;
 	    var type = data.type;
-	    var payload = data.payload;
 
 	    if (id === undefined || !type || typeof type !== "string" || !type.trim()) {
 	      this._warn("Got an invalid message:", data);
@@ -181,31 +177,57 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    if (type === REPLY_TYPE) {
-	      // This is a reply to a previous message. Resolve or reject the promise
-	      // based on the result.
-	      if (!this._pendingMessages.has(id)) {
-	        this._debug("Ignoring an unexpected reply.");
-	        return;
-	      }
+	      // This is a reply to a previous message.
+	      return this._handleReply(data);
+	    } else {
+	      // This is a new message for the client to handle.
+	      return this._handleNewMessage(data);
+	    }
+	  },
 
-	      var _pendingMessages$get = this._pendingMessages.get(id);
+	  /**
+	   * Handles replies to previously sent message.
+	   *
+	   * @private
+	   */
+	  _handleReply: function _handleReply(data) {
+	    var id = data.id;
 
-	      var resolve = _pendingMessages$get.resolve;
-	      var reject = _pendingMessages$get.reject;
-
-	      if (data.error) {
-	        this._debug("Received an error reply for message", id);
-	        this._debug("Error was", data.error);
-	        reject(data.error);
-	      } else {
-	        this._debug("Received a success reply for message", id);
-	        this._debug("Result was", data.result);
-	        resolve(data.result);
-	      }
-
-	      this._pendingMessages["delete"](id);
+	    if (!this._pendingMessages.has(id)) {
+	      this._debug("Ignoring an unexpected reply.");
 	      return;
 	    }
+
+	    var _pendingMessages$get = this._pendingMessages.get(id);
+
+	    var resolve = _pendingMessages$get.resolve;
+	    var reject = _pendingMessages$get.reject;
+
+	    if (data.error) {
+	      this._debug("Received an error reply for message", id);
+	      this._debug("Error was", data.error);
+	      reject(data.error);
+	    } else {
+	      this._debug("Received a success reply for message", id);
+	      this._debug("Result was", data.result);
+	      resolve(data.result);
+	    }
+
+	    this._pendingMessages["delete"](id);
+	    return;
+	  },
+
+	  /**
+	   * Handles a new message.
+	   *
+	   * @private
+	   */
+	  _handleNewMessage: function _handleNewMessage(data) {
+	    var _this2 = this;
+
+	    var id = data.id;
+	    var type = data.type;
+	    var payload = data.payload;
 
 	    var handler = this._handlers.get(type);
 	    var handlerResult = null;
@@ -218,13 +240,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    } catch (e) {
 	      this._warn("Handler function failed:", e);
-	      handlerResult = Promise.reject(e);
+	      handlerResult = Promise.reject(e.message || e.name || "Unknown error");
 	    }
 
 	    handlerResult.then(function (result) {
-	      _this2.port.postMessage({ type: REPLY_TYPE, error: false, result: result, id: id });
+	      _this2.port.postMessage({ type: REPLY_TYPE, result: result, id: id });
 	    }, function (err) {
-	      _this2.port.postMessage({ type: REPLY_TYPE, error: err, id: id });
+	      _this2.port.postMessage({ type: REPLY_TYPE, error: err || "Unknown error", id: id });
+	    })["catch"](function (_) {
+	      // The return value could not be transferred or something else is horribly
+	      // broken.
+	      _this2.port.postMessage({ type: REPLY_TYPE, error: "Reply failed", id: id });
 	    });
 	  }
 	};
