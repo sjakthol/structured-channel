@@ -16,6 +16,7 @@ function initializeFrame(url) {
       resolve(frame.contentWindow);
     });
   });
+  frame.style.display = "none";
   frame.src = url || PONG_FRAME_URL;
   document.body.appendChild(frame);
   return res;
@@ -42,10 +43,7 @@ function initializeWorker(url) {
  */
 function initializeChannelToFrame(url, targetOrigin, global) {
   return initializeFrame(url).then(function(win) {
-    var chnl = StructuredChannel.connectTo(win, targetOrigin, global);
-    return once(chnl, "ready").then(function() {
-      return chnl;
-    });
+    return StructuredChannel.connectTo(win, targetOrigin, global);
   });
 }
 
@@ -61,9 +59,20 @@ function initializeChannelToFrame(url, targetOrigin, global) {
  */
 function initializeChannelToWorker(url, targetOrigin, global) {
   var worker = initializeWorker(url);
-  var chnl = StructuredChannel.connectTo(worker, targetOrigin, global);
-  return once(chnl, "ready").then(function() {
-    return chnl;
+  return StructuredChannel.connectTo(worker, targetOrigin, global);
+}
+
+/**
+ * Creates a local channel.
+ *
+ * @return {Promise} A promise that is fulfilled with an object
+ * { parent, child } where both values are StructuredChannel objects.
+ */
+function createChannelPair() {
+  var childPromise = StructuredChannel.waitForConnection(window, "*", this);
+  var parentPromise = StructuredChannel.connectTo("*", window);
+  return Promise.all([childPromise, parentPromise]).then(function(channels) {
+    return { child: channels[0], parent: channels[1] };
   });
 }
 
@@ -71,6 +80,7 @@ function initializeChannelToWorker(url, targetOrigin, global) {
  * Expects the given promise to reject.
  *
  * @param {Promise} promise - The promise to assert on.
+ * @param {Regexp} rgx - A regular expression the error must match.
  *
  * @return {Promise} A Promise that is fulfilled once the given promise settles.
  */
@@ -79,7 +89,9 @@ function expectRejection(promise, rgx) {
     expect(true, "Unexpected success!").to.be.false;
   }, function(err) {
     expect(true, "Rejected, as expected!").to.be.true;
-    expect(err).to.match(rgx);
+    if (rgx) {
+      expect(err).to.match(rgx);
+    }
   })
 }
 
