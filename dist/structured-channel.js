@@ -296,7 +296,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // target looks like a Window. Check the origin and report a failure to the
 	    // user. postMessage just silently discards the message it if the origins
 	    // don't match.
-	    if (targetOrigin && targetOrigin !== ANY_ORIGIN && targetOrigin === target.document.location.origin) {
+	    if (targetOrigin && targetOrigin !== ANY_ORIGIN && targetOrigin !== target.document.location.origin) {
 	      throw new Error("The given origin does not match the target origin.");
 	    }
 
