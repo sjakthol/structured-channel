@@ -69,8 +69,8 @@ function initializeChannelToWorker(url, targetOrigin, global) {
  * { parent, child } where both values are StructuredChannel objects.
  */
 function createChannelPair() {
-  var childPromise = StructuredChannel.waitForConnection(window, "*", this);
-  var parentPromise = StructuredChannel.connectTo("*", window);
+  var childPromise = StructuredChannel.waitForConnection(window);
+  var parentPromise = StructuredChannel.connectTo(window);
   return Promise.all([childPromise, parentPromise]).then(function(channels) {
     return { child: channels[0], parent: channels[1] };
   });

@@ -3,7 +3,7 @@ if (typeof self.importScripts === "function") {
   self.importScripts("/base/dist/structured-channel.js");
 }
 
-StructuredChannel.waitForConnection("localhost", this).then(function(chnl) {
+StructuredChannel.waitForConnection(this).then(function(chnl) {
   chnl.on("ping", function(payload) {
     return payload;
   });
