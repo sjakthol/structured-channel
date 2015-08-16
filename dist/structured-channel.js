@@ -268,17 +268,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @param {Object} [global] - An optional global object that can be used to get
 	 * a reference to the MessageChannel constructor.
 	 *
-	 * @return {StructuredChannel} A new `StructuredChannel` instance that can be
-	 * used to communicate with the given target.
+	 * @return {Promise} A Promise that is fulfilled with a `StructuredChannel`
+	 * instance once the connection has been established. The promise is rejected on
+	 * error.
 	 *
-	 * @throws {TypeError|Error} The method throws following errors:
-	 *  * TypeError if @param target is undefined.
-	 *  * Error if @param targetOrigin does not match the origin of the target.
+	 * @throws {TypeError} TypeError if @param target is undefined.
 	 *
 	 */
 	StructuredChannel.connectTo = function (target, targetOrigin, global) {
 	  if (!target) {
-	    throw new TypeError("Target must be defined.");
+	    return Promise.reject("Target must be defined.");
 	  }
 
 	  if (targetOrigin && typeof targetOrigin.MessageChannel === "function") {
@@ -297,7 +296,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // user. postMessage just silently discards the message it if the origins
 	    // don't match.
 	    if (targetOrigin && targetOrigin !== ANY_ORIGIN && targetOrigin !== target.document.location.origin) {
-	      throw new Error("The given origin does not match the target origin.");
+	      return Promise.reject("The origins don't match.");
 	    }
 
 	    target.postMessage(HELLO_TYPE, origin, [channel.port2]);
@@ -306,7 +305,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	    target.postMessage(HELLO_TYPE, [channel.port2]);
 	  }
 
-	  return new StructuredChannel(channel.port1, origin);
+	  return new Promise(function (resolve, reject) {
+	    var channel = new StructuredChannel(channel.port1, origin);
+	    var ready = function ready() {
+	      channel.off("ready", ready);
+	      channel.off("error", error);
+	      resolve(channel);
+	    };
+
+	    var error = function error(reason) {
+	      channel.off("ready", success);
+	      channel.off("error", error);
+	      reject(reason);
+	    };
+
+	    channel.on("ready", ready);
+	    channel.on("error", error);
+	  });
 	};
 
 	/**
