@@ -306,21 +306,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	  return new Promise(function (resolve, reject) {
-	    var channel = new StructuredChannel(channel.port1, origin);
+	    var schnl = new StructuredChannel(channel.port1, origin);
 	    var ready = function ready() {
-	      channel.off("ready", ready);
-	      channel.off("error", error);
-	      resolve(channel);
+	      schnl.off("ready", ready);
+	      schnl.off("error", error);
+	      resolve(schnl);
 	    };
 
 	    var error = function error(reason) {
-	      channel.off("ready", success);
-	      channel.off("error", error);
+	      schnl.off("ready", ready);
+	      schnl.off("error", error);
 	      reject(reason);
 	    };
 
-	    channel.on("ready", ready);
-	    channel.on("error", error);
+	    schnl.on("ready", ready);
+	    schnl.on("error", error);
 	  });
 	};
 
@@ -328,23 +328,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * Waits for a connection request from `StructuredChannel.connectTo()` to arrive
 	 * as a message event to the given target.
 	 *
+	 * @param {Window|Worker} [target] - The target that should receive the
+	 * connection attempt (default `self`).
 	 * @param {String} [origin] - The origin from which the connection attemp should
-	 * come from. If undefined, connection attempts and messages from all origins
-	 * are allowed.
-	 * @param {Window|Worker} [target] - The target window.
+	 * come from. If undefined or '*', connection attempts and messages from all
+	 * origins are allowed. __Failing to provide a specific origin might have
+	 * security implications as malicious parties could establish a connection to
+	 * this target.__
 	 *
 	 * @return {Promise} that is resolved with a `StructuredChannel` instace once
 	 * the connection request is received.
 	 */
-	StructuredChannel.waitForConnection = function (origin, target) {
+	StructuredChannel.waitForConnection = function (target, origin) {
+	  if (target === undefined) target = self;
+
 	  return new Promise(function (resolve, reject) {
 	    var handler = function handler(ev) {
-	      if (ev.data === HELLO_TYPE) {
-	        target.onmessage = null;
-	        var channel = new StructuredChannel(ev.ports[0]);
-	        channel.send("ready");
-	        resolve(channel);
+	      if (ev.data !== HELLO_TYPE) {
+	        return;
 	      }
+
+	      var channel = new StructuredChannel(ev.ports[0]);
+	      // Enforce origin restrictions.
+	      if (origin && origin !== ANY_ORIGIN && origin !== ev.origin) {
+	        return channel.send("error", "Disallowed origin.");
+	      }
+
+	      target.onmessage = null;
+
+	      channel.send("ready");
+	      resolve(channel);
 	    };
 
 	    target.onmessage = handler;
