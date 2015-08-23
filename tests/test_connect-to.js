@@ -6,6 +6,10 @@ describe("StructuredChannel.connectTo()", function() {
     });
   }
 
+  it("should reject if target not defined", function() {
+    return expectRejection(StructuredChannel.connectTo());
+  });
+
   /** Window tests **/
   it("should connect to a Window with a target only", function() {
     return initializeFrame().then(function(target) {
@@ -36,6 +40,12 @@ describe("StructuredChannel.connectTo()", function() {
       .then(ensureConnected);
   });
 
+  it("should reject connection to Window if origin does not match", function() {
+    return initializeFrame().then(function(target) {
+      return expectRejection(StructuredChannel.connectTo(target, "http://no.com:123"));
+    });
+  });
+
   /** Worker tests **/
   it("should connect to a Worker with a target only", function() {
     return StructuredChannel.connectTo(initializeWorker())
@@ -55,15 +65,5 @@ describe("StructuredChannel.connectTo()", function() {
   it("should connect to a Worker with targetOrigin + global", function() {
     return StructuredChannel.connectTo(initializeWorker(), "obm", window)
       .then(ensureConnected);
-  });
-
-  it("should reject if target not defined", function() {
-    return expectRejection(StructuredChannel.connectTo());
-  });
-
-  it("should reject if targetOrigin does not match", function() {
-    return initializeFrame().then(function(target) {
-      return expectRejection(StructuredChannel.connectTo(target, "http://no.com:123"));
-    });
   });
 });
