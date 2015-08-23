@@ -1,6 +1,6 @@
 {
   "name": "structured-channel",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A wrapper around MessageChannel API for bi-directional communication between two browsing contexts.",
   "main": "lib/structured-channel.js",
   "scripts": {
