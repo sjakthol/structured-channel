@@ -31,11 +31,21 @@ describe("StructuredChannel.send()", function() {
     })
   );
 
-  it("should reject if the payload cannot be cloned",
+  it("should reject if the request payload cannot be cloned",
     genericTest(function(channel) {
       return expectRejection(channel.send("abc", { a: function() {} }));
     })
   );
+
+  it("should reject if the reply payload cannot be cloned", function() {
+    return createChannelPair().then(function(chnls) {
+      chnls.child.on("test", function() {
+        return { a: function() {} };
+      });
+
+      return expectRejection(chnls.parent.send("test"), /reply failed/i);
+    });
+  });
 
   it("should map replies to correct requests", genericTest(function(channel) {
     // Async ping is sent first, the reply should come after the sync one.
