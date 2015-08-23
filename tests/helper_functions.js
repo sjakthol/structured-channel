@@ -63,6 +63,50 @@ function initializeChannelToWorker(url, targetOrigin, global) {
 }
 
 /**
+ * Creates a channel to a window and runs the given test function body.
+ *
+ * @param {Function} body - The body of the test. It'll receive the channel as
+ * the first argument. The method can return a promise.
+ *
+ * @return {Function} Test function to be passed to it().
+ */
+function windowTest(body) {
+  return function() {
+    return initializeChannelToFrame().then(body);
+  };
+}
+
+/**
+ * Creates a channel to a worker and runs the given test function body.
+ *
+ * @param {Function} body - The body of the test. It'll receive the channel as
+ * the first argument. The method can return a promise.
+ *
+ * @return {Function} Test function to be passed to it().
+ */
+function workerTest(body) {
+  return function() {
+    return initializeChannelToWorker().then(body);
+  };
+}
+
+/**
+ * A function that runs the given test case body against a Window and a Worker.
+ *
+ * @param {Function} body - The body of the test. It'll receive the channel as
+ * the first argument. The method can return a Promise.
+ *
+ * @return {Function} Test function to be passed to it().
+ */
+function genericTest(body) {
+  return function() {
+    return windowTest(body)().then(function() {
+      return workerTest(body)();
+    });
+  };
+}
+
+/**
  * Creates a local channel.
  *
  * @return {Promise} A promise that is fulfilled with an object
