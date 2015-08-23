@@ -56,11 +56,26 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	"use strict";
 
+	/**
+	 * @module
+	 */
+
 	var REPLY_TYPE = "X-StructuredChannel-internal-reply";
 	var HELLO_TYPE = "X-StructuredChannel-internal-hello";
 	var ANY_ORIGIN = "*";
 
-	function StructuredChannel(port, origin) {
+	/**
+	 * The StructuredChannel constructor that creates a wrapper around MessagePort
+	 * for sending and receiving messages.
+	 *
+	 * Users should not create instances themselves but instead use
+	 * waitForConnection() and connectTo() static methods.
+	 *
+	 * @constructor
+	 *
+	 * @param {MessagePort} port - The port this object wraps.
+	 */
+	function StructuredChannel(port) {
 	  this._handleMessage = this._handleMessage.bind(this);
 	  this._handlers = new Map();
 	  this._pendingMessages = new Map();
@@ -70,8 +85,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  this.port = port;
 	  this.port.addEventListener("message", this._handleMessage);
 	  this.port.start();
-
-	  this.origin = origin;
 	}
 
 	StructuredChannel.prototype = {
@@ -105,7 +118,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * Adds a handler for given message type.
 	   *
 	   * @param {String} type - The type of the message to handle.
-	   * @param {Function} handler - The handler function.
+	   * @param {Function} handler - The handler function. The return value will be
+	   * transferred back to the sender and the Promise returned by send() is
+	   * settled according to it. If the function throws, returns a Promise that
+	   * is eventually rejected or returns a value that cannot be transmitted to the
+	   * sender, the send() Promise rejects. If the function returns a value, the
+	   * send() Promise is fulfilled with that value. If the function returns a
+	   * Promise that is eventually fulfilled, the send() Promise is fulfilled with
+	   * the fulfillment value.
 	   */
 	  on: function on(eventType, handler) {
 	    if (this._handlers.has(eventType)) {
@@ -136,12 +156,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @param {String} type - The type of the message.
 	   * @param {Object} payload - The payload for the message. The value must
 	   * support structured cloning.
-	   * @param {Array} transfer - An array of values that are transferred to the
-	   * target context.
 	   *
-	   * @return A Promise that is resolved once the receiver has handled the
-	   * message. The resolution value will be the object the handler method
-	   * returned. If the message handler fails, the promise is rejected.
+	   * @return {Promise} A Promise that is resolved once the receiver has handled
+	   * the message. The resolution value will be the object the handler method
+	   * returned. If the other party fails to handle the message, the Promise is
+	   * rejected.
 	   */
 	  send: function send(type, payload) {
 	    var _this = this;
@@ -247,9 +266,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      _this2.port.postMessage({ type: REPLY_TYPE, result: result, id: id });
 	    }, function (err) {
 	      _this2.port.postMessage({ type: REPLY_TYPE, error: err || "Unknown error", id: id });
-	    })["catch"](function (_) {
+	    })["catch"](function (e) {
 	      // The return value could not be transferred or something else is horribly
 	      // broken.
+	      _this2._warn("Reply could not be sent:", e);
 	      _this2.port.postMessage({ type: REPLY_TYPE, error: "Reply failed", id: id });
 	    });
 	  }
@@ -269,7 +289,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * a reference to the MessageChannel constructor.
 	 *
 	 * @return {Promise} A Promise that is fulfilled with a `StructuredChannel`
-	 * instance once the connection has been established. The promise is rejected on
+	 * instance once the connection has been established. The Promise is rejected on
 	 * error.
 	 *
 	 * @throws {TypeError} TypeError if @param target is undefined.
@@ -306,7 +326,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	  return new Promise(function (resolve, reject) {
-	    var schnl = new StructuredChannel(channel.port1, origin);
+	    var schnl = new StructuredChannel(channel.port1);
 	    var ready = function ready() {
 	      schnl.off("ready", ready);
 	      schnl.off("error", error);
@@ -330,13 +350,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	 *
 	 * @param {Window|Worker} [target] - The target that should receive the
 	 * connection attempt (default `self`).
-	 * @param {String} [origin] - The origin from which the connection attemp should
+	 * @param {String} [origin] - The origin from which the connection attempt should
 	 * come from. If undefined or '*', connection attempts and messages from all
 	 * origins are allowed. __Failing to provide a specific origin might have
 	 * security implications as malicious parties could establish a connection to
 	 * this target.__
 	 *
-	 * @return {Promise} that is resolved with a `StructuredChannel` instace once
+	 * @return {Promise} that is resolved with a `StructuredChannel` instance once
 	 * the connection request is received.
 	 */
 	StructuredChannel.waitForConnection = function (target, origin) {
