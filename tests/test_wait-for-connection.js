@@ -20,4 +20,16 @@ describe("StructuredChannel.waitForConnection()", function() {
     StructuredChannel.waitForConnection(window, "http://abc.com:1234");
     return expectRejection(StructuredChannel.connectTo(window));
   });
+
+  it("should ignore messages it does not know about", function() {
+    var op = StructuredChannel.waitForConnection(window, "*");
+
+    // Send a random message first.
+    window.postMessage("not-a-hello", "*");
+
+    // Then send the connection request.
+    StructuredChannel.connectTo(window);
+
+    return op;
+  });
 });
